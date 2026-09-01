@@ -1,0 +1,268 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="card">
+  <form method="get" action="/">
+    <div class="row">
+      <input
+        type="text"
+        name="project_pick"
+        list="project-options"
+        value="{{ project_pick_display }}"
+        placeholder="Velg eller søk prosjekt (navn eller id)"
+      />
+      <datalist id="project-options">
+        {% for p in projects %}
+          <option value="{{ (p.PROJECT_NAME or '(uten navn)') ~ ' | ' ~ p.PROJECT_ID }}"></option>
+        {% endfor %}
+      </datalist>
+      <input type="hidden" name="project_id" value="{{ project_id }}" />
+      <input type="text" name="q" value="{{ search }}" placeholder="Søk i issues (tomt felt = vis alle issues i prosjektet)" {% if not project_id %}disabled{% endif %} />
+      <select name="status" {% if not project_id %}disabled{% endif %}>
+        <option value="">Alle status</option>
+        {% for s in statuses %}
+          <option value="{{ s }}" {% if s == status %}selected{% endif %}>{{ s }}</option>
+        {% endfor %}
+      </select>
+      <select name="root_cause" {% if not project_id %}disabled{% endif %}>
+        <option value="">Alle root causes</option>
+        {% for rc in root_causes %}
+          <option value="{{ rc }}" {% if rc == root_cause %}selected{% endif %}>{{ rc }}</option>
+        {% endfor %}
+      </select>
+      <select name="company" {% if not project_id %}disabled{% endif %}>
+        <option value="">Alle selskaper</option>
+        {% for c in companies %}
+          <option value="{{ c }}" {% if c == company %}selected{% endif %}>{{ c }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </form>
+</section>
+
+{% if db_error %}
+<section class="card" style="border-color:#e11d48;background:#fff1f2;color:#881337;">
+  {{ db_error }}
+</section>
+{% endif %}
+
+<script>
+  (function () {
+    const form = document.querySelector('form[action="/"]');
+    if (!form) return;
+
+    const projectInput = form.querySelector('input[name="project_pick"]');
+    const projectIdHidden = form.querySelector('input[name="project_id"]');
+    const searchInput = form.querySelector('input[name="q"]');
+    const statusSelect = form.querySelector('select[name="status"]');
+    const rootCauseSelect = form.querySelector('select[name="root_cause"]');
+    const companySelect = form.querySelector('select[name="company"]');
+    if (!projectInput || !projectIdHidden) return;
+
+    const optionSet = new Set(
+      Array.from(document.querySelectorAll('#project-options option'))
+        .map((o) => (o.value || '').trim())
+        .filter(Boolean)
+    );
+
+    const extractProjectId = (value) => {
+      const raw = (value || '').trim();
+      if (!raw) return '';
+      if (raw.includes('|')) return raw.split('|').pop().trim();
+      return raw;
+    };
+
+    const syncProjectIdFromInput = () => {
+      const picked = (projectInput.value || '').trim();
+      if (!picked) {
+        projectIdHidden.value = '';
+        return '';
+      }
+
+      if (optionSet.has(picked) || picked.includes('|')) {
+        const resolved = extractProjectId(picked);
+        projectIdHidden.value = resolved;
+        return resolved;
+      }
+
+      return (projectIdHidden.value || '').trim();
+    };
+
+    const setFilterState = (enabled) => {
+      if (searchInput) searchInput.disabled = !enabled;
+      if (statusSelect) statusSelect.disabled = !enabled;
+      if (rootCauseSelect) rootCauseSelect.disabled = !enabled;
+      if (companySelect) companySelect.disabled = !enabled;
+    };
+
+    let timer = null;
+    projectInput.addEventListener('input', function () {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(function () {
+        const picked = (projectInput.value || '').trim();
+        if (!picked || !optionSet.has(picked)) {
+          setFilterState(false);
+          return;
+        }
+
+        const previousId = (projectIdHidden.value || '').trim();
+        const nextId = syncProjectIdFromInput();
+        if (!nextId || nextId === previousId) return;
+
+        setFilterState(true);
+        form.requestSubmit();
+      }, 100);
+    });
+
+    form.addEventListener('submit', function (event) {
+      const projectId = syncProjectIdFromInput();
+      const hasProject = !!projectId;
+      setFilterState(hasProject);
+      if (!hasProject) {
+        event.preventDefault();
+        projectInput.focus();
+      }
+    });
+
+    if (statusSelect) {
+      statusSelect.addEventListener('change', function () {
+        const projectId = syncProjectIdFromInput();
+        if (!projectId) return;
+        setFilterState(true);
+        form.requestSubmit();
+      });
+    }
+
+    if (rootCauseSelect) {
+      rootCauseSelect.addEventListener('change', function () {
+        const projectId = syncProjectIdFromInput();
+        if (!projectId) return;
+        setFilterState(true);
+        form.requestSubmit();
+      });
+    }
+
+    if (companySelect) {
+      companySelect.addEventListener('change', function () {
+        const projectId = syncProjectIdFromInput();
+        if (!projectId) return;
+        setFilterState(true);
+        form.requestSubmit();
+      });
+    }
+    if (searchInput) {
+      searchInput.addEventListener('blur', function () {
+        const projectId = syncProjectIdFromInput();
+        if (!projectId) return;
+        setFilterState(true);
+        form.requestSubmit();
+      });
+
+      searchInput.addEventListener('keydown', function (event) {
+        if (event.key !== 'Enter') return;
+        event.preventDefault();
+        const projectId = syncProjectIdFromInput();
+        if (!projectId) return;
+        setFilterState(true);
+        form.requestSubmit();
+      });
+    }
+
+    setFilterState(!!(projectIdHidden.value || '').trim());
+  })();
+</script>
+
+{% if project_id %}
+<section class="card split-layout">
+  <div>
+  <h2>
+    {{ selected_project.PROJECT_NAME if selected_project else "Prosjekt" }}
+    <span class="chip">{{ total_rows }} treff</span>
+  </h2>
+  {% if project_summary %}
+    <p>
+      <span class="chip">Issues: {{ project_summary.issue_count }}</span>
+      <span class="chip">Vedlegg/bilder: {{ project_summary.attachment_count }}</span>
+      <span class="chip">Side {{ page }} av {{ total_pages }}</span>
+    </p>
+  {% endif %}
+
+  {% if issues %}
+    <table>
+      <thead>
+        <tr>
+          <th>Issue</th>
+          <th>Status</th>
+          <th>Selskap</th>
+          <th>Issue type</th>
+          <th>Vedlegg</th>
+          <th>Oppdatert</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for i in issues %}
+          <tr>
+            <td>
+              <div><strong>{{ i.ISSUE_ID }}</strong></div>
+              <div>{{ i.ISSUE_DESCRIPTION or "-" }}</div>
+            </td>
+            <td>{{ i.STATUS or "-" }}</td>
+            <td>{{ i.COMPANY_NAME or "-" }}</td>
+            <td>{{ i.ISSUE_TYPE_NAME or "-" }}</td>
+            <td>{{ i.ATTACHMENT_COUNT }}</td>
+            <td>{{ i.UPDATED_AT or "-" }}</td>
+            <td>
+              <a href="/?project_pick={{ project_pick_display }}&project_id={{ project_id }}&q={{ search }}&status={{ status }}&root_cause={{ root_cause }}&company={{ company }}&page={{ page }}&issue_id={{ i.ISSUE_ID }}">Bilder</a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <p>
+      {% if page > 1 %}
+        <a href="/?project_pick={{ project_pick_display }}&project_id={{ project_id }}&q={{ search }}&status={{ status }}&root_cause={{ root_cause }}&company={{ company }}&page={{ page - 1 }}&issue_id={{ split_issue_id }}">Forrige</a>
+      {% endif %}
+      {% if page > 1 and page < total_pages %} | {% endif %}
+      {% if page < total_pages %}
+        <a href="/?project_pick={{ project_pick_display }}&project_id={{ project_id }}&q={{ search }}&status={{ status }}&root_cause={{ root_cause }}&company={{ company }}&page={{ page + 1 }}&issue_id={{ split_issue_id }}">Neste</a>
+      {% endif %}
+    </p>
+  {% else %}
+    <p>Ingen issues funnet for valgte filter.</p>
+  {% endif %}
+  </div>
+
+  <aside class="split-panel">
+    {% if split_issue %}
+      <h3>Bilder for issue {{ split_issue.ISSUE_ID }}</h3>
+      <p>{{ split_issue.ISSUE_DESCRIPTION or "Ingen beskrivelse" }}</p>
+
+      {% if split_attachments %}
+        <div class="grid">
+          {% for a in split_attachments %}
+          <article class="photo">
+            {% if a.IS_IMAGE and a.PREVIEW_URL %}
+              <img src="{{ a.PREVIEW_URL }}" alt="{{ a.FILE_NAME }}" loading="lazy" />
+            {% else %}
+              <img alt="Ingen forhåndsvisning" loading="lazy" />
+            {% endif %}
+            <p><strong>{{ a.FILE_NAME or "attachment" }}</strong></p>
+            {% if a.OPEN_URL %}
+              <p><a href="{{ a.OPEN_URL }}" target="_blank" rel="noopener">Åpne bilde</a></p>
+            {% endif %}
+          </article>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p>Ingen vedlegg funnet på denne issue.</p>
+      {% endif %}
+    {% else %}
+      <h3>Bilder</h3>
+      <p>Velg Bilder på en issue i tabellen for å vise bilder i splittet visning.</p>
+    {% endif %}
+  </aside>
+</section>
+{% endif %}
+{% endblock %}

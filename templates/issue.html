@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="card">
+  <h2>Issue {{ issue.ISSUE_ID }}</h2>
+  <p>{{ issue.ISSUE_DESCRIPTION or "Ingen beskrivelse" }}</p>
+  <div class="kvs">
+    <div class="k">Prosjekt</div><div>{{ issue.PROJECT_NAME or issue.PROJECT_ID }}</div>
+    <div class="k">Status</div><div>{{ issue.STATUS or "-" }}</div>
+    <div class="k">Selskap</div><div>{{ issue.COMPANY_NAME or "-" }}</div>
+    <div class="k">Issue type</div><div>{{ issue.ISSUE_TYPE_FULL_NAME or issue.ISSUE_TYPE_NAME or "-" }}</div>
+    <div class="k">Root cause</div><div>{{ issue.ROOT_CAUSE_FULL_NAME or issue.ROOT_CAUSE_NAME or "-" }}</div>
+    <div class="k">Opprettet</div><div>{{ issue.CREATED_AT or "-" }}</div>
+    <div class="k">Oppdatert</div><div>{{ issue.UPDATED_AT or "-" }}</div>
+    <div class="k">Lukket</div><div>{{ issue.CLOSED_AT or "-" }}</div>
+  </div>
+</section>
+
+<section class="card">
+  <h3>Vedlegg og bilder <span class="chip">{{ attachments|length }}</span></h3>
+  {% if attachments %}
+    <div class="grid">
+      {% for a in attachments %}
+      <article class="photo">
+        {% if a.IS_IMAGE and a.PREVIEW_URL %}
+          <img src="{{ a.PREVIEW_URL }}" alt="{{ a.FILE_NAME }}" loading="lazy" />
+        {% else %}
+          <img alt="Ingen forhåndsvisning" loading="lazy" />
+        {% endif %}
+        <p><strong>{{ a.FILE_NAME or "attachment" }}</strong></p>
+        {% if a.OPEN_URL %}
+          <p><a href="{{ a.OPEN_URL }}" target="_blank" rel="noopener">Åpne bilde</a></p>
+        {% endif %}
+        {% if a.SOURCE_URL %}
+          <p><a href="{{ a.SOURCE_URL }}" target="_blank" rel="noopener">Kilde-URL</a></p>
+        {% endif %}
+      </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p>Ingen vedlegg registrert på denne issue.</p>
+  {% endif %}
+</section>
+
+<section>
+  <a href="/?project_id={{ issue.PROJECT_ID }}">Tilbake til prosjekt</a>
+</section>
+{% endblock %}

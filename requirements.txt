@@ -1,0 +1,5 @@
+flask
+snowflake-connector-python
+azure-storage-blob
+python-dotenv
+pyjks
