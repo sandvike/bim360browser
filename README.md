@@ -96,6 +96,13 @@ Web-appen kjorer uten aktiv innloggingsgate i Flask.
   - Access Restrictions (IP allowlist)
   - Private Endpoint/VNet-integrasjon
 
+### Status (drift)
+
+- Autentisering: plattformniva (Azure App Service Authentication/Authorization).
+- Tilgangskrav: bruker ma vaere medlem av Entra-gruppen `NO-BIM30-EXPLORER`.
+- Flask-appen har ingen intern login-gate; tilgang styres utenfor app-koden.
+- Anbefaling: behold Access Restrictions eller Private Endpoint i tillegg ved produksjonsdrift.
+
 Install dependencies:
 
 ```powershell
