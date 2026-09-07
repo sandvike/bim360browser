@@ -224,28 +224,6 @@
       border-radius: 999px;
       background: #f8fbfa;
     }
-    .split-toolbar {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      margin: 0 0 12px;
-    }
-    .split-toolbar a {
-      display: inline-flex;
-      align-items: center;
-      padding: 7px 12px;
-      border: 1px solid var(--line);
-      border-radius: 999px;
-      background: #f8fbfa;
-      font-weight: 600;
-      font-size: 13px;
-      white-space: nowrap;
-    }
-    .split-toolbar a.active {
-      background: var(--accent);
-      color: white;
-      border-color: var(--accent);
-    }
     .split-mode-chip {
       display: inline-block;
       background: #f0f7f5;
@@ -279,9 +257,31 @@
       z-index: 1;
     }
     .issues-table-wrap {
-      overflow-x: auto;
+      overflow-x: hidden;
       max-width: 100%;
     }
+    .issues-table-wrap table {
+      table-layout: fixed;
+    }
+    .issues-table-wrap th,
+    .issues-table-wrap td {
+      word-break: break-word;
+      overflow-wrap: anywhere;
+    }
+    .issues-table-wrap th:nth-child(1),
+    .issues-table-wrap td:nth-child(1) { width: 34%; }
+    .issues-table-wrap th:nth-child(2),
+    .issues-table-wrap td:nth-child(2) { width: 10%; }
+    .issues-table-wrap th:nth-child(3),
+    .issues-table-wrap td:nth-child(3) { width: 12%; }
+    .issues-table-wrap th:nth-child(4),
+    .issues-table-wrap td:nth-child(4) { width: 12%; }
+    .issues-table-wrap th:nth-child(5),
+    .issues-table-wrap td:nth-child(5) { width: 7%; }
+    .issues-table-wrap th:nth-child(6),
+    .issues-table-wrap td:nth-child(6) { width: 10%; }
+    .issues-table-wrap th:nth-child(7),
+    .issues-table-wrap td:nth-child(7) { width: 15%; }
     .split-panel {
       border-left: 1px solid var(--line);
       padding-left: 14px;
@@ -302,9 +302,6 @@
       border-bottom: 1px solid var(--line);
       box-shadow: none;
       pointer-events: auto;
-    }
-    .split-panel-header .split-toolbar {
-      margin: 0 0 10px;
     }
     .split-panel-body {
       position: relative;
@@ -378,14 +375,7 @@
   </div>
 
   <aside class="split-panel">
-    {% set panel_issue_id = split_issue.ISSUE_ID if split_issue else split_issue_id %}
-    {% set base_query = '/?project_pick=' ~ project_pick_display ~ '&project_id=' ~ project_id ~ '&q=' ~ search ~ '&status=' ~ status ~ '&root_cause=' ~ root_cause ~ '&company=' ~ company ~ '&issue_type=' ~ issue_type ~ '&location_path=' ~ location_path ~ '&page=' ~ page %}
     <div class="split-panel-header">
-      <div class="split-toolbar">
-        <a class="{% if split_view == 'images' %}active{% endif %}" href="{{ base_query }}{% if panel_issue_id %}&issue_id={{ panel_issue_id }}{% endif %}&split_view=images">Bilder</a>
-        <a class="{% if split_view == 'comments' %}active{% endif %}" href="{{ base_query }}{% if panel_issue_id %}&issue_id={{ panel_issue_id }}{% endif %}&split_view=comments">Comments</a>
-        <a class="{% if split_view == 'history' %}active{% endif %}" href="{{ base_query }}{% if panel_issue_id %}&issue_id={{ panel_issue_id }}{% endif %}&split_view=history">History</a>
-      </div>
       {% if split_issue %}
         <h3 style="margin-bottom: 6px; position: relative; z-index: 2;">
           {% if split_view == "comments" %}
