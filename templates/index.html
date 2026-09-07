@@ -246,11 +246,6 @@
       color: white;
       border-color: var(--accent);
     }
-    .split-toolbar a.disabled {
-      opacity: 0.45;
-      pointer-events: none;
-      cursor: default;
-    }
     .split-mode-chip {
       display: inline-block;
       background: #f0f7f5;
@@ -278,7 +273,14 @@
     }
     .split-main {
       min-width: 0;
+      max-width: 100%;
+      overflow: hidden;
+      position: relative;
+      z-index: 1;
+    }
+    .issues-table-wrap {
       overflow-x: auto;
+      max-width: 100%;
     }
     .split-panel {
       border-left: 1px solid var(--line);
@@ -287,17 +289,19 @@
       flex-direction: column;
       gap: 12px;
       position: relative;
-      z-index: 2;
+      z-index: 5;
       background: var(--paper);
+      pointer-events: auto;
     }
     .split-panel-header {
       position: relative;
-      z-index: 2;
+      z-index: 6;
       background: var(--paper);
       padding: 0 0 12px;
       margin-bottom: 12px;
       border-bottom: 1px solid var(--line);
       box-shadow: none;
+      pointer-events: auto;
     }
     .split-panel-header .split-toolbar {
       margin: 0 0 10px;
@@ -321,6 +325,7 @@
   {% endif %}
 
   {% if issues %}
+    <div class="issues-table-wrap">
     <table>
       <thead>
         <tr>
@@ -356,6 +361,7 @@
         {% endfor %}
       </tbody>
     </table>
+    </div>
 
     <p>
       {% if page > 1 %}
@@ -373,11 +379,12 @@
 
   <aside class="split-panel">
     {% set panel_issue_id = split_issue.ISSUE_ID if split_issue else split_issue_id %}
+    {% set base_query = '/?project_pick=' ~ project_pick_display ~ '&project_id=' ~ project_id ~ '&q=' ~ search ~ '&status=' ~ status ~ '&root_cause=' ~ root_cause ~ '&company=' ~ company ~ '&issue_type=' ~ issue_type ~ '&location_path=' ~ location_path ~ '&page=' ~ page %}
     <div class="split-panel-header">
       <div class="split-toolbar">
-        <a class="{% if split_view == 'images' %}active{% endif %} {% if not panel_issue_id %}disabled{% endif %}" href="{% if panel_issue_id %}/?project_pick={{ project_pick_display }}&project_id={{ project_id }}&q={{ search }}&status={{ status }}&root_cause={{ root_cause }}&company={{ company }}&issue_type={{ issue_type }}&location_path={{ location_path }}&page={{ page }}&issue_id={{ panel_issue_id }}&split_view=images{% else %}#{% endif %}">Bilder</a>
-        <a class="{% if split_view == 'comments' %}active{% endif %} {% if not panel_issue_id %}disabled{% endif %}" href="{% if panel_issue_id %}/?project_pick={{ project_pick_display }}&project_id={{ project_id }}&q={{ search }}&status={{ status }}&root_cause={{ root_cause }}&company={{ company }}&issue_type={{ issue_type }}&location_path={{ location_path }}&page={{ page }}&issue_id={{ panel_issue_id }}&split_view=comments{% else %}#{% endif %}">Comments</a>
-        <a class="{% if split_view == 'history' %}active{% endif %} {% if not panel_issue_id %}disabled{% endif %}" href="{% if panel_issue_id %}/?project_pick={{ project_pick_display }}&project_id={{ project_id }}&q={{ search }}&status={{ status }}&root_cause={{ root_cause }}&company={{ company }}&issue_type={{ issue_type }}&location_path={{ location_path }}&page={{ page }}&issue_id={{ panel_issue_id }}&split_view=history{% else %}#{% endif %}">History</a>
+        <a class="{% if split_view == 'images' %}active{% endif %}" href="{{ base_query }}{% if panel_issue_id %}&issue_id={{ panel_issue_id }}{% endif %}&split_view=images">Bilder</a>
+        <a class="{% if split_view == 'comments' %}active{% endif %}" href="{{ base_query }}{% if panel_issue_id %}&issue_id={{ panel_issue_id }}{% endif %}&split_view=comments">Comments</a>
+        <a class="{% if split_view == 'history' %}active{% endif %}" href="{{ base_query }}{% if panel_issue_id %}&issue_id={{ panel_issue_id }}{% endif %}&split_view=history">History</a>
       </div>
       {% if split_issue %}
         <h3 style="margin-bottom: 6px; position: relative; z-index: 2;">
