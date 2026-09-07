@@ -17,6 +17,85 @@
 </section>
 
 <section class="card">
+  <style>
+    .issue-tabs {
+      display: flex;
+      gap: 8px;
+      border-bottom: 1px solid var(--line);
+      margin-bottom: 12px;
+    }
+    .issue-tab-btn {
+      border: 1px solid var(--line);
+      border-bottom: none;
+      border-radius: 10px 10px 0 0;
+      background: #f5f8f7;
+      color: var(--ink);
+      padding: 8px 12px;
+      cursor: pointer;
+    }
+    .issue-tab-btn.active {
+      background: var(--paper);
+      font-weight: 600;
+    }
+    .issue-tab-panel {
+      display: none;
+    }
+    .issue-tab-panel.active {
+      display: block;
+    }
+    .issue-pre {
+      margin: 0;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: Consolas, Monaco, monospace;
+      font-size: 13px;
+      line-height: 1.4;
+      background: #f7faf9;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 12px;
+    }
+  </style>
+
+  <div class="issue-tabs" role="tablist" aria-label="Issue detaljer">
+    <button type="button" class="issue-tab-btn active" data-tab-target="comments-tab" role="tab" aria-selected="true">Comments</button>
+    <button type="button" class="issue-tab-btn" data-tab-target="history-tab" role="tab" aria-selected="false">History</button>
+  </div>
+
+  <div id="comments-tab" class="issue-tab-panel active" role="tabpanel">
+    <pre class="issue-pre">{{ comments_text }}</pre>
+  </div>
+
+  <div id="history-tab" class="issue-tab-panel" role="tabpanel">
+    <pre class="issue-pre">{{ history_text }}</pre>
+  </div>
+
+  <script>
+    (function () {
+      const buttons = document.querySelectorAll('.issue-tab-btn');
+      const panels = document.querySelectorAll('.issue-tab-panel');
+      if (!buttons.length || !panels.length) return;
+
+      buttons.forEach((button) => {
+        button.addEventListener('click', () => {
+          const targetId = button.getAttribute('data-tab-target');
+          buttons.forEach((b) => {
+            b.classList.remove('active');
+            b.setAttribute('aria-selected', 'false');
+          });
+          panels.forEach((panel) => panel.classList.remove('active'));
+
+          button.classList.add('active');
+          button.setAttribute('aria-selected', 'true');
+          const targetPanel = document.getElementById(targetId);
+          if (targetPanel) targetPanel.classList.add('active');
+        });
+      });
+    })();
+  </script>
+</section>
+
+<section class="card">
   <h3>Vedlegg og bilder <span class="chip">{{ attachments|length }}</span></h3>
   {% if attachments %}
     <div class="grid">

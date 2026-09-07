@@ -36,6 +36,18 @@
           <option value="{{ c }}" {% if c == company %}selected{% endif %}>{{ c }}</option>
         {% endfor %}
       </select>
+      <select name="issue_type" {% if not project_id %}disabled{% endif %}>
+        <option value="">Alle issue-typer</option>
+        {% for it in issue_types %}
+          <option value="{{ it }}" {% if it == issue_type %}selected{% endif %}>{{ it }}</option>
+        {% endfor %}
+      </select>
+      <select name="location_path" {% if not project_id %}disabled{% endif %}>
+        <option value="">Alle lokasjoner</option>
+        {% for lp in locations %}
+          <option value="{{ lp }}" {% if lp == location_path %}selected{% endif %}>{{ lp }}</option>
+        {% endfor %}
+      </select>
     </div>
   </form>
 </section>
@@ -57,6 +69,8 @@
     const statusSelect = form.querySelector('select[name="status"]');
     const rootCauseSelect = form.querySelector('select[name="root_cause"]');
     const companySelect = form.querySelector('select[name="company"]');
+    const issueTypeSelect = form.querySelector('select[name="issue_type"]');
+    const locationSelect = form.querySelector('select[name="location_path"]');
     if (!projectInput || !projectIdHidden) return;
 
     const optionSet = new Set(
@@ -93,6 +107,8 @@
       if (statusSelect) statusSelect.disabled = !enabled;
       if (rootCauseSelect) rootCauseSelect.disabled = !enabled;
       if (companySelect) companySelect.disabled = !enabled;
+      if (issueTypeSelect) issueTypeSelect.disabled = !enabled;
+      if (locationSelect) locationSelect.disabled = !enabled;
     };
 
     let timer = null;
@@ -144,6 +160,24 @@
 
     if (companySelect) {
       companySelect.addEventListener('change', function () {
+        const projectId = syncProjectIdFromInput();
+        if (!projectId) return;
+        setFilterState(true);
+        form.requestSubmit();
+      });
+    }
+
+    if (issueTypeSelect) {
+      issueTypeSelect.addEventListener('change', function () {
+        const projectId = syncProjectIdFromInput();
+        if (!projectId) return;
+        setFilterState(true);
+        form.requestSubmit();
+      });
+    }
+
+    if (locationSelect) {
+      locationSelect.addEventListener('change', function () {
         const projectId = syncProjectIdFromInput();
         if (!projectId) return;
         setFilterState(true);
@@ -213,7 +247,7 @@
             <td>{{ i.ATTACHMENT_COUNT }}</td>
             <td>{{ i.UPDATED_AT or "-" }}</td>
             <td>
-              <a href="/?project_pick={{ project_pick_display }}&project_id={{ project_id }}&q={{ search }}&status={{ status }}&root_cause={{ root_cause }}&company={{ company }}&page={{ page }}&issue_id={{ i.ISSUE_ID }}">Bilder</a>
+              <a href="/?project_pick={{ project_pick_display }}&project_id={{ project_id }}&q={{ search }}&status={{ status }}&root_cause={{ root_cause }}&company={{ company }}&issue_type={{ issue_type }}&location_path={{ location_path }}&page={{ page }}&issue_id={{ i.ISSUE_ID }}">Bilder</a>
             </td>
           </tr>
         {% endfor %}
@@ -222,11 +256,11 @@
 
     <p>
       {% if page > 1 %}
-        <a href="/?project_pick={{ project_pick_display }}&project_id={{ project_id }}&q={{ search }}&status={{ status }}&root_cause={{ root_cause }}&company={{ company }}&page={{ page - 1 }}&issue_id={{ split_issue_id }}">Forrige</a>
+        <a href="/?project_pick={{ project_pick_display }}&project_id={{ project_id }}&q={{ search }}&status={{ status }}&root_cause={{ root_cause }}&company={{ company }}&issue_type={{ issue_type }}&location_path={{ location_path }}&page={{ page - 1 }}&issue_id={{ split_issue_id }}">Forrige</a>
       {% endif %}
       {% if page > 1 and page < total_pages %} | {% endif %}
       {% if page < total_pages %}
-        <a href="/?project_pick={{ project_pick_display }}&project_id={{ project_id }}&q={{ search }}&status={{ status }}&root_cause={{ root_cause }}&company={{ company }}&page={{ page + 1 }}&issue_id={{ split_issue_id }}">Neste</a>
+        <a href="/?project_pick={{ project_pick_display }}&project_id={{ project_id }}&q={{ search }}&status={{ status }}&root_cause={{ root_cause }}&company={{ company }}&issue_type={{ issue_type }}&location_path={{ location_path }}&page={{ page + 1 }}&issue_id={{ split_issue_id }}">Neste</a>
       {% endif %}
     </p>
   {% else %}

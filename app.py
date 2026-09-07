@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+import json
 import mimetypes
 import os
 import threading
@@ -988,11 +989,56 @@ def query_companies(project_id: str) -> list[str]:
         cur.close()
 
 
-def query_issues(project_id: str, search: str, status: str, root_cause: str, company: str, page: int) -> tuple[list[dict[str, Any]], int]:
+def query_issue_types(project_id: str) -> list[str]:
+    sql = f"""
+        SELECT DISTINCT "issue_type_name" AS issue_type_name
+    FROM {ISSUES_VIEW}
+        WHERE "project_id" = %s
+            AND "issue_type_name" IS NOT NULL
+        ORDER BY "issue_type_name"
+    """
+    con = snowflake_conn()
+    cur = con.cursor()
+    try:
+        cur.execute(sql, (project_id,))
+        return [str(row[0]) for row in cur.fetchall()]
+    finally:
+        cur.close()
+
+
+def query_locations(project_id: str) -> list[str]:
+    sql = f"""
+        SELECT DISTINCT "location_path" AS location_path
+    FROM {ISSUES_VIEW}
+        WHERE "project_id" = %s
+            AND "location_path" IS NOT NULL
+        ORDER BY "location_path"
+    """
+    con = snowflake_conn()
+    cur = con.cursor()
+    try:
+        cur.execute(sql, (project_id,))
+        return [str(row[0]) for row in cur.fetchall()]
+    finally:
+        cur.close()
+
+
+def query_issues(
+    project_id: str,
+    search: str,
+    status: str,
+    root_cause: str,
+    company: str,
+    issue_type: str,
+    location_path: str,
+    page: int,
+) -> tuple[list[dict[str, Any]], int]:
     search_like = f"%{search}%"
     status_filter = status.strip().lower()
     root_cause_filter = root_cause.strip().lower()
     company_filter = company.strip().lower()
+    issue_type_filter = issue_type.strip().lower()
+    location_path_filter = location_path.strip().lower()
     offset = (page - 1) * PAGE_SIZE
 
     where_sql = """
@@ -1015,6 +1061,14 @@ def query_issues(project_id: str, search: str, status: str, root_cause: str, com
             AND (
                 %s = ''
                                 OR LOWER(v."company_name") = %s
+            )
+            AND (
+                %s = ''
+                                OR LOWER(v."issue_type_name") = %s
+            )
+            AND (
+                %s = ''
+                                OR LOWER(v."location_path") = %s
             )
     """
 
@@ -1039,6 +1093,7 @@ def query_issues(project_id: str, search: str, status: str, root_cause: str, com
         v."root_cause_name" AS root_cause_name,
         v."company_name" AS company_name,
         v."issue_type_name" AS issue_type_name,
+        v."location_path" AS location_path,
         v."created_at" AS created_at,
         v."updated_at" AS updated_at,
         v."closed_at" AS closed_at,
@@ -1068,6 +1123,10 @@ def query_issues(project_id: str, search: str, status: str, root_cause: str, com
             root_cause_filter,
             company_filter,
             company_filter,
+            issue_type_filter,
+            issue_type_filter,
+            location_path_filter,
+            location_path_filter,
         )
         cur.execute(count_sql, filter_params)
         count_row = cur.fetchone() or {}
@@ -1153,9 +1212,20 @@ def index():
     status = request.args.get("status", "").strip()
     root_cause = request.args.get("root_cause", "").strip()
     company = request.args.get("company", "").strip()
+    issue_type = request.args.get("issue_type", "").strip()
+    location_path = request.args.get("location_path", "").strip()
     split_issue_id = request.args.get("issue_id", "").strip()
     page = max(1, request.args.get("page", type=int, default=1))
-    has_follow_up_filters = bool(search or status or root_cause or company or split_issue_id or "page" in request.args)
+    has_follow_up_filters = bool(
+        search
+        or status
+        or root_cause
+        or company
+        or issue_type
+        or location_path
+        or split_issue_id
+        or "page" in request.args
+    )
     has_explicit_project = bool(project_pick or project_id)
 
     db_error = None
@@ -1185,6 +1255,8 @@ def index():
     statuses: list[str] = []
     root_causes: list[str] = []
     companies: list[str] = []
+    issue_types: list[str] = []
+    locations: list[str] = []
     project_summary = None
     total_rows = 0
     total_pages = 0
@@ -1201,12 +1273,14 @@ def index():
         statuses = query_statuses(project_id)
         root_causes = query_root_causes(project_id)
         companies = query_companies(project_id)
+        issue_types = query_issue_types(project_id)
+        locations = query_locations(project_id)
         project_summary = query_project_summary(project_id)
-        issues, total_rows = query_issues(project_id, search, status, root_cause, company, page)
+        issues, total_rows = query_issues(project_id, search, status, root_cause, company, issue_type, location_path, page)
         total_pages = max(1, (total_rows + PAGE_SIZE - 1) // PAGE_SIZE)
         if page > total_pages:
             page = total_pages
-            issues, total_rows = query_issues(project_id, search, status, root_cause, company, page)
+            issues, total_rows = query_issues(project_id, search, status, root_cause, company, issue_type, location_path, page)
 
         if split_issue_id:
             split_issue = query_issue(project_id, split_issue_id)
@@ -1225,12 +1299,16 @@ def index():
         status=status,
         root_cause=root_cause,
         company=company,
+        issue_type=issue_type,
+        location_path=location_path,
         split_issue_id=split_issue_id,
         split_issue=split_issue,
         split_attachments=split_attachments,
         statuses=statuses,
         root_causes=root_causes,
         companies=companies,
+        issue_types=issue_types,
+        locations=locations,
         project_summary=project_summary,
         page=page,
         page_size=PAGE_SIZE,
@@ -1246,8 +1324,33 @@ def issue_detail(project_id: str, issue_id: str):
     if not issue:
         abort(404)
 
+    def _format_issue_field(value: Any, empty_text: str) -> str:
+        if value is None:
+            return empty_text
+        if isinstance(value, (dict, list)):
+            return json.dumps(value, indent=2, ensure_ascii=False)
+        if isinstance(value, str):
+            stripped = value.strip()
+            if not stripped:
+                return empty_text
+            try:
+                parsed = json.loads(stripped)
+                return json.dumps(parsed, indent=2, ensure_ascii=False)
+            except Exception:
+                return stripped
+        return str(value)
+
+    comments_text = _format_issue_field(issue.get("COMMENTS"), "Ingen kommentarer.")
+    history_text = _format_issue_field(issue.get("ADDITIONAL_FIELDS"), "Ingen history-data.")
+
     attachments = query_attachments(project_id, issue_id)
-    return render_template("issue.html", issue=issue, attachments=attachments)
+    return render_template(
+        "issue.html",
+        issue=issue,
+        attachments=attachments,
+        comments_text=comments_text,
+        history_text=history_text,
+    )
 
 
 if __name__ == "__main__":
