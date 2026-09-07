@@ -1370,6 +1370,10 @@ def issue_detail(project_id: str, issue_id: str):
     if not issue:
         abort(404)
 
+    active_view = request.args.get("view", "attachments").strip().lower()
+    if active_view not in {"attachments", "comments", "history"}:
+        active_view = "attachments"
+
     comments_text = format_issue_field(get_row_value(issue, "COMMENTS", "comments"), "Ingen kommentarer.")
     history_text = format_issue_field(get_row_value(issue, "ADDITIONAL_FIELDS", "additional_fields"), "Ingen history-data.")
 
@@ -1380,6 +1384,7 @@ def issue_detail(project_id: str, issue_id: str):
         attachments=attachments,
         comments_text=comments_text,
         history_text=history_text,
+        active_view=active_view,
     )
 
 

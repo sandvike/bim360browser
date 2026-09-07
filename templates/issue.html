@@ -18,30 +18,27 @@
 
 <section class="card">
   <style>
-    .issue-tabs {
+    .issue-view-toolbar {
       display: flex;
       gap: 8px;
-      border-bottom: 1px solid var(--line);
+      flex-wrap: wrap;
       margin-bottom: 12px;
     }
-    .issue-tab-btn {
+    .issue-view-toolbar a {
+      display: inline-flex;
+      align-items: center;
+      padding: 7px 12px;
       border: 1px solid var(--line);
-      border-bottom: none;
-      border-radius: 10px 10px 0 0;
-      background: #f5f8f7;
-      color: var(--ink);
-      padding: 8px 12px;
-      cursor: pointer;
-    }
-    .issue-tab-btn.active {
-      background: var(--paper);
+      border-radius: 999px;
+      background: #f8fbfa;
       font-weight: 600;
+      font-size: 13px;
+      white-space: nowrap;
     }
-    .issue-tab-panel {
-      display: none;
-    }
-    .issue-tab-panel.active {
-      display: block;
+    .issue-view-toolbar a.active {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
     }
     .issue-pre {
       margin: 0;
@@ -49,7 +46,7 @@
       word-break: break-word;
       font-family: Consolas, Monaco, monospace;
       font-size: 13px;
-      line-height: 1.4;
+      line-height: 1.45;
       background: #f7faf9;
       border: 1px solid var(--line);
       border-radius: 10px;
@@ -57,67 +54,42 @@
     }
   </style>
 
-  <div class="issue-tabs" role="tablist" aria-label="Issue detaljer">
-    <button type="button" class="issue-tab-btn active" data-tab-target="comments-tab" role="tab" aria-selected="true">Comments</button>
-    <button type="button" class="issue-tab-btn" data-tab-target="history-tab" role="tab" aria-selected="false">History</button>
+  <div class="issue-view-toolbar" aria-label="Issue visning">
+    <a class="{% if active_view == 'attachments' %}active{% endif %}" href="/issue/{{ issue.PROJECT_ID }}/{{ issue.ISSUE_ID }}?view=attachments">Vedlegg og bilder</a>
+    <a class="{% if active_view == 'comments' %}active{% endif %}" href="/issue/{{ issue.PROJECT_ID }}/{{ issue.ISSUE_ID }}?view=comments">Comments</a>
+    <a class="{% if active_view == 'history' %}active{% endif %}" href="/issue/{{ issue.PROJECT_ID }}/{{ issue.ISSUE_ID }}?view=history">History</a>
   </div>
 
-  <div id="comments-tab" class="issue-tab-panel active" role="tabpanel">
+  {% if active_view == 'comments' %}
+    <h3>Comments</h3>
     <pre class="issue-pre">{{ comments_text }}</pre>
-  </div>
-
-  <div id="history-tab" class="issue-tab-panel" role="tabpanel">
+  {% elif active_view == 'history' %}
+    <h3>History</h3>
     <pre class="issue-pre">{{ history_text }}</pre>
-  </div>
-
-  <script>
-    (function () {
-      const buttons = document.querySelectorAll('.issue-tab-btn');
-      const panels = document.querySelectorAll('.issue-tab-panel');
-      if (!buttons.length || !panels.length) return;
-
-      buttons.forEach((button) => {
-        button.addEventListener('click', () => {
-          const targetId = button.getAttribute('data-tab-target');
-          buttons.forEach((b) => {
-            b.classList.remove('active');
-            b.setAttribute('aria-selected', 'false');
-          });
-          panels.forEach((panel) => panel.classList.remove('active'));
-
-          button.classList.add('active');
-          button.setAttribute('aria-selected', 'true');
-          const targetPanel = document.getElementById(targetId);
-          if (targetPanel) targetPanel.classList.add('active');
-        });
-      });
-    })();
-  </script>
-</section>
-
-<section class="card">
-  <h3>Vedlegg og bilder <span class="chip">{{ attachments|length }}</span></h3>
-  {% if attachments %}
-    <div class="grid">
-      {% for a in attachments %}
-      <article class="photo">
-        {% if a.IS_IMAGE and a.PREVIEW_URL %}
-          <img src="{{ a.PREVIEW_URL }}" alt="{{ a.FILE_NAME }}" loading="lazy" />
-        {% else %}
-          <img alt="Ingen forhåndsvisning" loading="lazy" />
-        {% endif %}
-        <p><strong>{{ a.FILE_NAME or "attachment" }}</strong></p>
-        {% if a.OPEN_URL %}
-          <p><a href="{{ a.OPEN_URL }}" target="_blank" rel="noopener">Åpne bilde</a></p>
-        {% endif %}
-        {% if a.SOURCE_URL %}
-          <p><a href="{{ a.SOURCE_URL }}" target="_blank" rel="noopener">Kilde-URL</a></p>
-        {% endif %}
-      </article>
-      {% endfor %}
-    </div>
   {% else %}
-    <p>Ingen vedlegg registrert på denne issue.</p>
+    <h3>Vedlegg og bilder <span class="chip">{{ attachments|length }}</span></h3>
+    {% if attachments %}
+      <div class="grid">
+        {% for a in attachments %}
+        <article class="photo">
+          {% if a.IS_IMAGE and a.PREVIEW_URL %}
+            <img src="{{ a.PREVIEW_URL }}" alt="{{ a.FILE_NAME }}" loading="lazy" />
+          {% else %}
+            <img alt="Ingen forhåndsvisning" loading="lazy" />
+          {% endif %}
+          <p><strong>{{ a.FILE_NAME or "attachment" }}</strong></p>
+          {% if a.OPEN_URL %}
+            <p><a href="{{ a.OPEN_URL }}" target="_blank" rel="noopener">Åpne bilde</a></p>
+          {% endif %}
+          {% if a.SOURCE_URL %}
+            <p><a href="{{ a.SOURCE_URL }}" target="_blank" rel="noopener">Kilde-URL</a></p>
+          {% endif %}
+        </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p>Ingen vedlegg registrert på denne issue.</p>
+    {% endif %}
   {% endif %}
 </section>
 
