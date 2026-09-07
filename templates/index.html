@@ -281,9 +281,9 @@
       border-bottom: 1px solid var(--line);
       box-shadow: 0 8px 18px rgba(31, 42, 43, 0.06);
     }
-    .split-panel-header .split-toolbar {
-      margin: 0 0 10px;
-    }
+      .split-panel-header .split-toolbar {
+        margin: 0 0 10px;
+      }
     .split-panel-body {
       position: relative;
       z-index: 1;
@@ -361,7 +361,7 @@
           <a class="{% if split_view == 'comments' %}active{% endif %}" href="/?project_pick={{ project_pick_display }}&project_id={{ project_id }}&q={{ search }}&status={{ status }}&root_cause={{ root_cause }}&company={{ company }}&issue_type={{ issue_type }}&location_path={{ location_path }}&page={{ page }}&issue_id={{ split_issue.ISSUE_ID }}&split_view=comments">Comments</a>
           <a class="{% if split_view == 'history' %}active{% endif %}" href="/?project_pick={{ project_pick_display }}&project_id={{ project_id }}&q={{ search }}&status={{ status }}&root_cause={{ root_cause }}&company={{ company }}&issue_type={{ issue_type }}&location_path={{ location_path }}&page={{ page }}&issue_id={{ split_issue.ISSUE_ID }}&split_view=history">History</a>
         </div>
-        <h3 style="margin-bottom: 6px;">
+          <h3 style="margin-bottom: 6px; position: relative; z-index: 2;">
           {% if split_view == "comments" %}
             Comments for issue {{ split_issue.ISSUE_ID }}
           {% elif split_view == "history" %}
@@ -371,7 +371,7 @@
           {% endif %}
           <span class="split-mode-chip">{{ split_view|capitalize }}</span>
         </h3>
-        <p style="margin: 0;">{{ split_issue.ISSUE_DESCRIPTION or "Ingen beskrivelse" }}</p>
+          <p style="margin: 0; position: relative; z-index: 2;">{{ split_issue.ISSUE_DESCRIPTION or "Ingen beskrivelse" }}</p>
       </div>
 
       <div class="split-panel-body">
