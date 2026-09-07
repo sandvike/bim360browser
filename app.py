@@ -881,6 +881,137 @@ def format_issue_field(value: Any, empty_text: str) -> str:
     return str(value)
 
 
+def _parse_json_like(value: Any) -> Any:
+    if isinstance(value, (dict, list)):
+        return value
+    if isinstance(value, str):
+        stripped = value.strip()
+        if not stripped:
+            return None
+        try:
+            return json.loads(stripped)
+        except Exception:
+            return None
+    return None
+
+
+def _extract_comment_text(item: dict[str, Any]) -> str:
+    text_keys = (
+        "comment",
+        "message",
+        "body",
+        "text",
+        "content",
+        "description",
+        "value",
+    )
+    for key in text_keys:
+        value = get_row_value(item, key)
+        if value is None:
+            continue
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+        if isinstance(value, (int, float, bool)):
+            return str(value)
+        if isinstance(value, dict):
+            nested = get_row_value(value, "text", "value", "message")
+            if isinstance(nested, str) and nested.strip():
+                return nested.strip()
+    return ""
+
+
+def _extract_comment_author(item: dict[str, Any]) -> str:
+    author_keys = (
+        "author_name",
+        "author",
+        "created_by_name",
+        "created_by",
+        "createdBy",
+        "user_name",
+        "user",
+        "owner",
+        "display_name",
+        "name",
+    )
+    for key in author_keys:
+        value = get_row_value(item, key)
+        if value is None:
+            continue
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+        if isinstance(value, dict):
+            nested = get_row_value(value, "name", "display_name", "displayName", "full_name", "email", "id")
+            if nested is not None:
+                nested_text = str(nested).strip()
+                if nested_text:
+                    return nested_text
+    return "Ukjent"
+
+
+def _extract_comment_time(item: dict[str, Any]) -> str:
+    time_keys = (
+        "created_at",
+        "createdAt",
+        "timestamp",
+        "time",
+        "date",
+        "posted_at",
+        "updated_at",
+    )
+    for key in time_keys:
+        value = get_row_value(item, key)
+        if value is None:
+            continue
+        text = str(value).strip()
+        if text:
+            return text
+    return ""
+
+
+def parse_issue_comments(value: Any) -> list[dict[str, str]]:
+    parsed = _parse_json_like(value)
+    rows: list[Any] = []
+
+    if isinstance(parsed, list):
+        rows = parsed
+    elif isinstance(parsed, dict):
+        for key in ("comments", "items", "entries", "data", "results"):
+            nested = get_row_value(parsed, key)
+            if isinstance(nested, list):
+                rows = nested
+                break
+        if not rows:
+            rows = [parsed]
+    elif isinstance(value, str):
+        stripped = value.strip()
+        if stripped:
+            return [{"author": "Kommentar", "time": "", "text": stripped}]
+        return []
+    elif value is not None:
+        return [{"author": "Kommentar", "time": "", "text": str(value)}]
+
+    comments: list[dict[str, str]] = []
+    for row in rows:
+        if isinstance(row, dict):
+            text = _extract_comment_text(row)
+            if not text:
+                text = json.dumps(row, ensure_ascii=False)
+            comments.append(
+                {
+                    "author": _extract_comment_author(row),
+                    "time": _extract_comment_time(row),
+                    "text": text,
+                }
+            )
+            continue
+
+        text = str(row).strip()
+        if text:
+            comments.append({"author": "Kommentar", "time": "", "text": text})
+
+    return comments
+
+
 def get_row_value(row: dict[str, Any] | None, *names: str) -> Any:
     if not row:
         return None
@@ -1301,7 +1432,7 @@ def index():
     total_pages = 0
     split_issue = None
     split_attachments: list[dict[str, Any]] = []
-    split_comments_text = "Ingen kommentarer."
+    split_comments: list[dict[str, str]] = []
     split_history_text = "Ingen history-data."
     project_pick_display = project_pick
 
@@ -1327,7 +1458,7 @@ def index():
             split_issue = query_issue(project_id, split_issue_id)
             if split_issue:
                 split_attachments = query_attachments(project_id, split_issue_id)
-                split_comments_text = format_issue_field(get_row_value(split_issue, "COMMENTS", "comments"), "Ingen kommentarer.")
+                split_comments = parse_issue_comments(get_row_value(split_issue, "COMMENTS", "comments"))
                 split_history_text = format_issue_field(get_row_value(split_issue, "ADDITIONAL_FIELDS", "additional_fields"), "Ingen history-data.")
 
     return render_template(
@@ -1348,7 +1479,7 @@ def index():
         split_view=split_view,
         split_issue=split_issue,
         split_attachments=split_attachments,
-        split_comments_text=split_comments_text,
+        split_comments=split_comments,
         split_history_text=split_history_text,
         statuses=statuses,
         root_causes=root_causes,
@@ -1374,7 +1505,7 @@ def issue_detail(project_id: str, issue_id: str):
     if active_view not in {"attachments", "comments", "history"}:
         active_view = "attachments"
 
-    comments_text = format_issue_field(get_row_value(issue, "COMMENTS", "comments"), "Ingen kommentarer.")
+    comments = parse_issue_comments(get_row_value(issue, "COMMENTS", "comments"))
     history_text = format_issue_field(get_row_value(issue, "ADDITIONAL_FIELDS", "additional_fields"), "Ingen history-data.")
 
     attachments = query_attachments(project_id, issue_id)
@@ -1382,7 +1513,7 @@ def issue_detail(project_id: str, issue_id: str):
         "issue.html",
         issue=issue,
         attachments=attachments,
-        comments_text=comments_text,
+        comments=comments,
         history_text=history_text,
         active_view=active_view,
     )

@@ -249,6 +249,34 @@
       max-height: 70vh;
       overflow: auto;
     }
+    .chat-thread {
+      display: grid;
+      gap: 10px;
+    }
+    .chat-item {
+      border: 1px solid var(--line);
+      background: #f7faf9;
+      border-radius: 12px;
+      padding: 10px 12px;
+    }
+    .chat-meta {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 6px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .chat-author {
+      font-weight: 700;
+      color: #1d4f47;
+    }
+    .chat-text {
+      margin: 0;
+      white-space: pre-wrap;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+    }
     .split-main {
       min-width: 0;
       max-width: 100%;
@@ -397,7 +425,21 @@
     <div class="split-panel-body">
       {% if split_issue %}
         {% if split_view == "comments" %}
-          <pre class="split-pre">{{ split_comments_text }}</pre>
+          {% if split_comments %}
+            <div class="chat-thread">
+              {% for c in split_comments %}
+              <article class="chat-item">
+                <div class="chat-meta">
+                  <span class="chat-author">{{ c.author }}</span>
+                  {% if c.time %}<span>{{ c.time }}</span>{% endif %}
+                </div>
+                <p class="chat-text">{{ c.text }}</p>
+              </article>
+              {% endfor %}
+            </div>
+          {% else %}
+            <p>Ingen kommentarer.</p>
+          {% endif %}
         {% elif split_view == "history" %}
           <pre class="split-pre">{{ split_history_text }}</pre>
         {% else %}
