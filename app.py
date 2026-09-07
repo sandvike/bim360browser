@@ -858,8 +858,27 @@ def generate_blob_read_url(project_id: str, issue_id: str, file_name: str) -> st
 def is_image_name(file_name: str) -> bool:
     ctype, _ = mimetypes.guess_type(file_name)
     return bool(ctype and ctype.startswith("image/"))
+
+
 def _preferred_attachment_url(azure_blob_url: str | None, source_url: str | None) -> str | None:
     return azure_blob_url or source_url or None
+
+
+def format_issue_field(value: Any, empty_text: str) -> str:
+    if value is None:
+        return empty_text
+    if isinstance(value, (dict, list)):
+        return json.dumps(value, indent=2, ensure_ascii=False)
+    if isinstance(value, str):
+        stripped = value.strip()
+        if not stripped:
+            return empty_text
+        try:
+            parsed = json.loads(stripped)
+            return json.dumps(parsed, indent=2, ensure_ascii=False)
+        except Exception:
+            return stripped
+    return str(value)
 
 
 def query_projects() -> list[dict[str, Any]]:
@@ -1215,6 +1234,9 @@ def index():
     issue_type = request.args.get("issue_type", "").strip()
     location_path = request.args.get("location_path", "").strip()
     split_issue_id = request.args.get("issue_id", "").strip()
+    split_view = request.args.get("split_view", "images").strip().lower()
+    if split_view not in {"images", "comments", "history"}:
+        split_view = "images"
     page = max(1, request.args.get("page", type=int, default=1))
     has_follow_up_filters = bool(
         search
@@ -1262,6 +1284,8 @@ def index():
     total_pages = 0
     split_issue = None
     split_attachments: list[dict[str, Any]] = []
+    split_comments_text = "Ingen kommentarer."
+    split_history_text = "Ingen history-data."
     project_pick_display = project_pick
 
     if project_id and not db_error:
@@ -1286,6 +1310,8 @@ def index():
             split_issue = query_issue(project_id, split_issue_id)
             if split_issue:
                 split_attachments = query_attachments(project_id, split_issue_id)
+                split_comments_text = format_issue_field(split_issue.get("COMMENTS"), "Ingen kommentarer.")
+                split_history_text = format_issue_field(split_issue.get("ADDITIONAL_FIELDS"), "Ingen history-data.")
 
     return render_template(
         "index.html",
@@ -1302,8 +1328,11 @@ def index():
         issue_type=issue_type,
         location_path=location_path,
         split_issue_id=split_issue_id,
+        split_view=split_view,
         split_issue=split_issue,
         split_attachments=split_attachments,
+        split_comments_text=split_comments_text,
+        split_history_text=split_history_text,
         statuses=statuses,
         root_causes=root_causes,
         companies=companies,
@@ -1324,24 +1353,8 @@ def issue_detail(project_id: str, issue_id: str):
     if not issue:
         abort(404)
 
-    def _format_issue_field(value: Any, empty_text: str) -> str:
-        if value is None:
-            return empty_text
-        if isinstance(value, (dict, list)):
-            return json.dumps(value, indent=2, ensure_ascii=False)
-        if isinstance(value, str):
-            stripped = value.strip()
-            if not stripped:
-                return empty_text
-            try:
-                parsed = json.loads(stripped)
-                return json.dumps(parsed, indent=2, ensure_ascii=False)
-            except Exception:
-                return stripped
-        return str(value)
-
-    comments_text = _format_issue_field(issue.get("COMMENTS"), "Ingen kommentarer.")
-    history_text = _format_issue_field(issue.get("ADDITIONAL_FIELDS"), "Ingen history-data.")
+    comments_text = format_issue_field(issue.get("COMMENTS"), "Ingen kommentarer.")
+    history_text = format_issue_field(issue.get("ADDITIONAL_FIELDS"), "Ingen history-data.")
 
     attachments = query_attachments(project_id, issue_id)
     return render_template(

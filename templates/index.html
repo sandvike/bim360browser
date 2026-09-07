@@ -208,6 +208,41 @@
 
 {% if project_id %}
 <section class="card split-layout">
+  <style>
+    .split-link-group {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .split-link-group a {
+      font-size: 13px;
+    }
+    .split-mode-chip {
+      display: inline-block;
+      background: #f0f7f5;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 3px 10px;
+      font-size: 12px;
+      color: #1f5d54;
+      margin-left: 8px;
+      vertical-align: middle;
+    }
+    .split-pre {
+      margin: 0;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: Consolas, Monaco, monospace;
+      font-size: 13px;
+      line-height: 1.45;
+      background: #f7faf9;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 12px;
+      max-height: 70vh;
+      overflow: auto;
+    }
+  </style>
   <div>
   <h2>
     {{ selected_project.PROJECT_NAME if selected_project else "Prosjekt" }}
@@ -247,7 +282,11 @@
             <td>{{ i.ATTACHMENT_COUNT }}</td>
             <td>{{ i.UPDATED_AT or "-" }}</td>
             <td>
-              <a href="/?project_pick={{ project_pick_display }}&project_id={{ project_id }}&q={{ search }}&status={{ status }}&root_cause={{ root_cause }}&company={{ company }}&issue_type={{ issue_type }}&location_path={{ location_path }}&page={{ page }}&issue_id={{ i.ISSUE_ID }}">Bilder</a>
+              <div class="split-link-group">
+                <a href="/?project_pick={{ project_pick_display }}&project_id={{ project_id }}&q={{ search }}&status={{ status }}&root_cause={{ root_cause }}&company={{ company }}&issue_type={{ issue_type }}&location_path={{ location_path }}&page={{ page }}&issue_id={{ i.ISSUE_ID }}&split_view=images">Bilder</a>
+                <a href="/?project_pick={{ project_pick_display }}&project_id={{ project_id }}&q={{ search }}&status={{ status }}&root_cause={{ root_cause }}&company={{ company }}&issue_type={{ issue_type }}&location_path={{ location_path }}&page={{ page }}&issue_id={{ i.ISSUE_ID }}&split_view=comments">Comments</a>
+                <a href="/?project_pick={{ project_pick_display }}&project_id={{ project_id }}&q={{ search }}&status={{ status }}&root_cause={{ root_cause }}&company={{ company }}&issue_type={{ issue_type }}&location_path={{ location_path }}&page={{ page }}&issue_id={{ i.ISSUE_ID }}&split_view=history">History</a>
+              </div>
             </td>
           </tr>
         {% endfor %}
@@ -256,11 +295,11 @@
 
     <p>
       {% if page > 1 %}
-        <a href="/?project_pick={{ project_pick_display }}&project_id={{ project_id }}&q={{ search }}&status={{ status }}&root_cause={{ root_cause }}&company={{ company }}&issue_type={{ issue_type }}&location_path={{ location_path }}&page={{ page - 1 }}&issue_id={{ split_issue_id }}">Forrige</a>
+        <a href="/?project_pick={{ project_pick_display }}&project_id={{ project_id }}&q={{ search }}&status={{ status }}&root_cause={{ root_cause }}&company={{ company }}&issue_type={{ issue_type }}&location_path={{ location_path }}&page={{ page - 1 }}&issue_id={{ split_issue_id }}&split_view={{ split_view }}">Forrige</a>
       {% endif %}
       {% if page > 1 and page < total_pages %} | {% endif %}
       {% if page < total_pages %}
-        <a href="/?project_pick={{ project_pick_display }}&project_id={{ project_id }}&q={{ search }}&status={{ status }}&root_cause={{ root_cause }}&company={{ company }}&issue_type={{ issue_type }}&location_path={{ location_path }}&page={{ page + 1 }}&issue_id={{ split_issue_id }}">Neste</a>
+        <a href="/?project_pick={{ project_pick_display }}&project_id={{ project_id }}&q={{ search }}&status={{ status }}&root_cause={{ root_cause }}&company={{ company }}&issue_type={{ issue_type }}&location_path={{ location_path }}&page={{ page + 1 }}&issue_id={{ split_issue_id }}&split_view={{ split_view }}">Neste</a>
       {% endif %}
     </p>
   {% else %}
@@ -270,31 +309,46 @@
 
   <aside class="split-panel">
     {% if split_issue %}
-      <h3>Bilder for issue {{ split_issue.ISSUE_ID }}</h3>
+      <h3>
+        {% if split_view == "comments" %}
+          Comments for issue {{ split_issue.ISSUE_ID }}
+        {% elif split_view == "history" %}
+          History for issue {{ split_issue.ISSUE_ID }}
+        {% else %}
+          Bilder for issue {{ split_issue.ISSUE_ID }}
+        {% endif %}
+        <span class="split-mode-chip">{{ split_view|capitalize }}</span>
+      </h3>
       <p>{{ split_issue.ISSUE_DESCRIPTION or "Ingen beskrivelse" }}</p>
 
-      {% if split_attachments %}
-        <div class="grid">
-          {% for a in split_attachments %}
-          <article class="photo">
-            {% if a.IS_IMAGE and a.PREVIEW_URL %}
-              <img src="{{ a.PREVIEW_URL }}" alt="{{ a.FILE_NAME }}" loading="lazy" />
-            {% else %}
-              <img alt="Ingen forhåndsvisning" loading="lazy" />
-            {% endif %}
-            <p><strong>{{ a.FILE_NAME or "attachment" }}</strong></p>
-            {% if a.OPEN_URL %}
-              <p><a href="{{ a.OPEN_URL }}" target="_blank" rel="noopener">Åpne bilde</a></p>
-            {% endif %}
-          </article>
-          {% endfor %}
-        </div>
+      {% if split_view == "comments" %}
+        <pre class="split-pre">{{ split_comments_text }}</pre>
+      {% elif split_view == "history" %}
+        <pre class="split-pre">{{ split_history_text }}</pre>
       {% else %}
-        <p>Ingen vedlegg funnet på denne issue.</p>
+        {% if split_attachments %}
+          <div class="grid">
+            {% for a in split_attachments %}
+            <article class="photo">
+              {% if a.IS_IMAGE and a.PREVIEW_URL %}
+                <img src="{{ a.PREVIEW_URL }}" alt="{{ a.FILE_NAME }}" loading="lazy" />
+              {% else %}
+                <img alt="Ingen forhåndsvisning" loading="lazy" />
+              {% endif %}
+              <p><strong>{{ a.FILE_NAME or "attachment" }}</strong></p>
+              {% if a.OPEN_URL %}
+                <p><a href="{{ a.OPEN_URL }}" target="_blank" rel="noopener">Åpne bilde</a></p>
+              {% endif %}
+            </article>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p>Ingen vedlegg funnet på denne issue.</p>
+        {% endif %}
       {% endif %}
     {% else %}
-      <h3>Bilder</h3>
-      <p>Velg Bilder på en issue i tabellen for å vise bilder i splittet visning.</p>
+      <h3>Issue panel</h3>
+      <p>Velg Bilder, Comments eller History på en issue i tabellen for å vise innhold i høyrepanelet.</p>
     {% endif %}
   </aside>
 </section>
