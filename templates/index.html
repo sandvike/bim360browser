@@ -271,25 +271,38 @@
       max-height: 70vh;
       overflow: auto;
     }
-    .split-panel-header {
-      position: sticky;
-      top: 0;
-      z-index: 20;
+    .split-main {
+      min-width: 0;
+      overflow-x: auto;
+    }
+    .split-panel {
+      border-left: 1px solid var(--line);
+      padding-left: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      position: relative;
+      z-index: 2;
       background: var(--paper);
-      padding: 4px 0 14px;
+    }
+    .split-panel-header {
+      position: relative;
+      z-index: 2;
+      background: var(--paper);
+      padding: 0 0 12px;
       margin-bottom: 12px;
       border-bottom: 1px solid var(--line);
-      box-shadow: 0 8px 18px rgba(31, 42, 43, 0.06);
+      box-shadow: none;
     }
-      .split-panel-header .split-toolbar {
-        margin: 0 0 10px;
-      }
+    .split-panel-header .split-toolbar {
+      margin: 0 0 10px;
+    }
     .split-panel-body {
       position: relative;
       z-index: 1;
     }
   </style>
-  <div>
+  <div class="split-main">
   <h2>
     {{ selected_project.PROJECT_NAME if selected_project else "Prosjekt" }}
     <span class="chip">{{ total_rows }} treff</span>
