@@ -216,6 +216,35 @@
     }
     .split-link-group a {
       font-size: 13px;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 10px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #f8fbfa;
+    }
+    .split-toolbar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin: 0 0 12px;
+    }
+    .split-toolbar a {
+      display: inline-flex;
+      align-items: center;
+      padding: 7px 12px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #f8fbfa;
+      font-weight: 600;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+    .split-toolbar a.active {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
     }
     .split-mode-chip {
       display: inline-block;
@@ -309,6 +338,11 @@
 
   <aside class="split-panel">
     {% if split_issue %}
+      <div class="split-toolbar">
+        <a class="{% if split_view == 'images' %}active{% endif %}" href="/?project_pick={{ project_pick_display }}&project_id={{ project_id }}&q={{ search }}&status={{ status }}&root_cause={{ root_cause }}&company={{ company }}&issue_type={{ issue_type }}&location_path={{ location_path }}&page={{ page }}&issue_id={{ split_issue.ISSUE_ID }}&split_view=images">Bilder</a>
+        <a class="{% if split_view == 'comments' %}active{% endif %}" href="/?project_pick={{ project_pick_display }}&project_id={{ project_id }}&q={{ search }}&status={{ status }}&root_cause={{ root_cause }}&company={{ company }}&issue_type={{ issue_type }}&location_path={{ location_path }}&page={{ page }}&issue_id={{ split_issue.ISSUE_ID }}&split_view=comments">Comments</a>
+        <a class="{% if split_view == 'history' %}active{% endif %}" href="/?project_pick={{ project_pick_display }}&project_id={{ project_id }}&q={{ search }}&status={{ status }}&root_cause={{ root_cause }}&company={{ company }}&issue_type={{ issue_type }}&location_path={{ location_path }}&page={{ page }}&issue_id={{ split_issue.ISSUE_ID }}&split_view=history">History</a>
+      </div>
       <h3>
         {% if split_view == "comments" %}
           Comments for issue {{ split_issue.ISSUE_ID }}

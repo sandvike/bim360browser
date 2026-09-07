@@ -881,6 +881,23 @@ def format_issue_field(value: Any, empty_text: str) -> str:
     return str(value)
 
 
+def get_row_value(row: dict[str, Any] | None, *names: str) -> Any:
+    if not row:
+        return None
+
+    for name in names:
+        if name in row:
+            return row.get(name)
+
+    lowered = {str(key).lower(): key for key in row.keys()}
+    for name in names:
+        match_key = lowered.get(name.lower())
+        if match_key is not None:
+            return row.get(match_key)
+
+    return None
+
+
 def query_projects() -> list[dict[str, Any]]:
     sql = f"""
     SELECT DISTINCT "project_id" AS project_id, "project_name" AS project_name
@@ -1310,8 +1327,8 @@ def index():
             split_issue = query_issue(project_id, split_issue_id)
             if split_issue:
                 split_attachments = query_attachments(project_id, split_issue_id)
-                split_comments_text = format_issue_field(split_issue.get("COMMENTS"), "Ingen kommentarer.")
-                split_history_text = format_issue_field(split_issue.get("ADDITIONAL_FIELDS"), "Ingen history-data.")
+                split_comments_text = format_issue_field(get_row_value(split_issue, "COMMENTS", "comments"), "Ingen kommentarer.")
+                split_history_text = format_issue_field(get_row_value(split_issue, "ADDITIONAL_FIELDS", "additional_fields"), "Ingen history-data.")
 
     return render_template(
         "index.html",
@@ -1353,8 +1370,8 @@ def issue_detail(project_id: str, issue_id: str):
     if not issue:
         abort(404)
 
-    comments_text = format_issue_field(issue.get("COMMENTS"), "Ingen kommentarer.")
-    history_text = format_issue_field(issue.get("ADDITIONAL_FIELDS"), "Ingen history-data.")
+    comments_text = format_issue_field(get_row_value(issue, "COMMENTS", "comments"), "Ingen kommentarer.")
+    history_text = format_issue_field(get_row_value(issue, "ADDITIONAL_FIELDS", "additional_fields"), "Ingen history-data.")
 
     attachments = query_attachments(project_id, issue_id)
     return render_template(
