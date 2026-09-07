@@ -246,6 +246,11 @@
       color: white;
       border-color: var(--accent);
     }
+    .split-toolbar a.disabled {
+      opacity: 0.45;
+      pointer-events: none;
+      cursor: default;
+    }
     .split-mode-chip {
       display: inline-block;
       background: #f0f7f5;
@@ -367,14 +372,15 @@
   </div>
 
   <aside class="split-panel">
-    {% if split_issue %}
-      <div class="split-panel-header">
-        <div class="split-toolbar">
-          <a class="{% if split_view == 'images' %}active{% endif %}" href="/?project_pick={{ project_pick_display }}&project_id={{ project_id }}&q={{ search }}&status={{ status }}&root_cause={{ root_cause }}&company={{ company }}&issue_type={{ issue_type }}&location_path={{ location_path }}&page={{ page }}&issue_id={{ split_issue.ISSUE_ID }}&split_view=images">Bilder</a>
-          <a class="{% if split_view == 'comments' %}active{% endif %}" href="/?project_pick={{ project_pick_display }}&project_id={{ project_id }}&q={{ search }}&status={{ status }}&root_cause={{ root_cause }}&company={{ company }}&issue_type={{ issue_type }}&location_path={{ location_path }}&page={{ page }}&issue_id={{ split_issue.ISSUE_ID }}&split_view=comments">Comments</a>
-          <a class="{% if split_view == 'history' %}active{% endif %}" href="/?project_pick={{ project_pick_display }}&project_id={{ project_id }}&q={{ search }}&status={{ status }}&root_cause={{ root_cause }}&company={{ company }}&issue_type={{ issue_type }}&location_path={{ location_path }}&page={{ page }}&issue_id={{ split_issue.ISSUE_ID }}&split_view=history">History</a>
-        </div>
-          <h3 style="margin-bottom: 6px; position: relative; z-index: 2;">
+    {% set panel_issue_id = split_issue.ISSUE_ID if split_issue else split_issue_id %}
+    <div class="split-panel-header">
+      <div class="split-toolbar">
+        <a class="{% if split_view == 'images' %}active{% endif %} {% if not panel_issue_id %}disabled{% endif %}" href="{% if panel_issue_id %}/?project_pick={{ project_pick_display }}&project_id={{ project_id }}&q={{ search }}&status={{ status }}&root_cause={{ root_cause }}&company={{ company }}&issue_type={{ issue_type }}&location_path={{ location_path }}&page={{ page }}&issue_id={{ panel_issue_id }}&split_view=images{% else %}#{% endif %}">Bilder</a>
+        <a class="{% if split_view == 'comments' %}active{% endif %} {% if not panel_issue_id %}disabled{% endif %}" href="{% if panel_issue_id %}/?project_pick={{ project_pick_display }}&project_id={{ project_id }}&q={{ search }}&status={{ status }}&root_cause={{ root_cause }}&company={{ company }}&issue_type={{ issue_type }}&location_path={{ location_path }}&page={{ page }}&issue_id={{ panel_issue_id }}&split_view=comments{% else %}#{% endif %}">Comments</a>
+        <a class="{% if split_view == 'history' %}active{% endif %} {% if not panel_issue_id %}disabled{% endif %}" href="{% if panel_issue_id %}/?project_pick={{ project_pick_display }}&project_id={{ project_id }}&q={{ search }}&status={{ status }}&root_cause={{ root_cause }}&company={{ company }}&issue_type={{ issue_type }}&location_path={{ location_path }}&page={{ page }}&issue_id={{ panel_issue_id }}&split_view=history{% else %}#{% endif %}">History</a>
+      </div>
+      {% if split_issue %}
+        <h3 style="margin-bottom: 6px; position: relative; z-index: 2;">
           {% if split_view == "comments" %}
             Comments for issue {{ split_issue.ISSUE_ID }}
           {% elif split_view == "history" %}
@@ -384,10 +390,15 @@
           {% endif %}
           <span class="split-mode-chip">{{ split_view|capitalize }}</span>
         </h3>
-          <p style="margin: 0; position: relative; z-index: 2;">{{ split_issue.ISSUE_DESCRIPTION or "Ingen beskrivelse" }}</p>
-      </div>
+        <p style="margin: 0; position: relative; z-index: 2;">{{ split_issue.ISSUE_DESCRIPTION or "Ingen beskrivelse" }}</p>
+      {% else %}
+        <h3 style="margin-bottom: 6px;">Issue panel</h3>
+        <p style="margin: 0;">Velg en issue i tabellen for å vise innhold i høyrepanelet.</p>
+      {% endif %}
+    </div>
 
-      <div class="split-panel-body">
+    <div class="split-panel-body">
+      {% if split_issue %}
         {% if split_view == "comments" %}
           <pre class="split-pre">{{ split_comments_text }}</pre>
         {% elif split_view == "history" %}
@@ -413,11 +424,8 @@
             <p>Ingen vedlegg funnet på denne issue.</p>
           {% endif %}
         {% endif %}
-      </div>
-    {% else %}
-      <h3>Issue panel</h3>
-      <p>Velg Bilder, Comments eller History på en issue i tabellen for å vise innhold i høyrepanelet.</p>
-    {% endif %}
+      {% endif %}
+    </div>
   </aside>
 </section>
 {% endif %}
