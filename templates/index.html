@@ -368,7 +368,11 @@
           <tr>
             <td>
               <div><strong>{{ i.ISSUE_ID }}</strong></div>
-              <div>{{ i.ISSUE_DESCRIPTION or "-" }}</div>
+              <div>
+                <a href="/issue/{{ i.PROJECT_ID }}/{{ i.ISSUE_ID }}" target="_blank" rel="noopener">
+                  {{ i.ISSUE_DESCRIPTION or "-" }}
+                </a>
+              </div>
             </td>
             <td>{{ i.STATUS or "-" }}</td>
             <td>{{ i.COMPANY_NAME or "-" }}</td>
