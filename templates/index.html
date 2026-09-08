@@ -369,7 +369,7 @@
             <td>
               <div><strong>{{ i.ISSUE_ID }}</strong></div>
               <div>
-                <a href="/issue/{{ i.PROJECT_ID }}/{{ i.ISSUE_ID }}" target="_blank" rel="noopener">
+                <a href="/issue?project_id={{ project_id|urlencode }}&issue_id={{ i.ISSUE_ID|urlencode }}" target="_blank" rel="noopener">
                   {{ i.ISSUE_DESCRIPTION or "-" }}
                 </a>
               </div>

@@ -83,9 +83,9 @@
   </style>
 
   <div class="issue-view-toolbar" aria-label="Issue visning">
-    <a class="{% if active_view == 'attachments' %}active{% endif %}" href="/issue/{{ issue.PROJECT_ID }}/{{ issue.ISSUE_ID }}?view=attachments">Vedlegg og bilder</a>
-    <a class="{% if active_view == 'comments' %}active{% endif %}" href="/issue/{{ issue.PROJECT_ID }}/{{ issue.ISSUE_ID }}?view=comments">Comments</a>
-    <a class="{% if active_view == 'history' %}active{% endif %}" href="/issue/{{ issue.PROJECT_ID }}/{{ issue.ISSUE_ID }}?view=history">History</a>
+    <a class="{% if active_view == 'attachments' %}active{% endif %}" href="/issue?project_id={{ issue.PROJECT_ID|urlencode }}&issue_id={{ issue.ISSUE_ID|urlencode }}&view=attachments">Vedlegg og bilder</a>
+    <a class="{% if active_view == 'comments' %}active{% endif %}" href="/issue?project_id={{ issue.PROJECT_ID|urlencode }}&issue_id={{ issue.ISSUE_ID|urlencode }}&view=comments">Comments</a>
+    <a class="{% if active_view == 'history' %}active{% endif %}" href="/issue?project_id={{ issue.PROJECT_ID|urlencode }}&issue_id={{ issue.ISSUE_ID|urlencode }}&view=history">History</a>
   </div>
 
   {% if active_view == 'comments' %}
@@ -136,6 +136,6 @@
 </section>
 
 <section>
-  <a href="/?project_id={{ issue.PROJECT_ID }}">Tilbake til prosjekt</a>
+  <a href="/?project_id={{ issue.PROJECT_ID|urlencode }}">Tilbake til prosjekt</a>
 </section>
 {% endblock %}

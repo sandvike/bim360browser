@@ -1495,8 +1495,7 @@ def index():
     )
 
 
-@app.get("/issue/<project_id>/<issue_id>")
-def issue_detail(project_id: str, issue_id: str):
+def _render_issue_detail(project_id: str, issue_id: str):
     issue = query_issue(project_id, issue_id)
     if not issue:
         abort(404)
@@ -1517,6 +1516,20 @@ def issue_detail(project_id: str, issue_id: str):
         history_text=history_text,
         active_view=active_view,
     )
+
+
+@app.get("/issue")
+def issue_detail_query():
+    project_id = request.args.get("project_id", "").strip()
+    issue_id = request.args.get("issue_id", "").strip()
+    if not project_id or not issue_id:
+        abort(400)
+    return _render_issue_detail(project_id, issue_id)
+
+
+@app.get("/issue/<project_id>/<path:issue_id>")
+def issue_detail(project_id: str, issue_id: str):
+    return _render_issue_detail(project_id, issue_id)
 
 
 if __name__ == "__main__":
