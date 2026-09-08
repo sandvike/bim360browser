@@ -201,7 +201,7 @@ def _ensure_runtime_templates() -> None:
     <div class="wrap">
         <header class="top">
             <div class="topbar">
-                <h1>BIM360 Issue Explorer</h1>
+                <h1>Bim360 Clasicfield archive</h1>
                 <div>
                     {% if session.get("is_authenticated") %}
                         <span class="sub">Innlogget som {{ session.get("user_name") }}</span>
