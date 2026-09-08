@@ -1029,6 +1029,18 @@ def get_row_value(row: dict[str, Any] | None, *names: str) -> Any:
     return None
 
 
+def normalize_row_keys(row: dict[str, Any] | None) -> dict[str, Any] | None:
+    if row is None:
+        return None
+
+    normalized: dict[str, Any] = {}
+    for key, value in row.items():
+        normalized[key] = value
+        normalized[str(key).upper()] = value
+        normalized[str(key).lower()] = value
+    return normalized
+
+
 def query_projects() -> list[dict[str, Any]]:
     sql = f"""
     SELECT DISTINCT "project_id" AS project_id, "project_name" AS project_name
@@ -1325,7 +1337,7 @@ def query_issue(project_id: str, issue_id: str) -> dict[str, Any] | None:
     cur = con.cursor(snowflake.connector.DictCursor)
     try:
         cur.execute(sql, (project_id, issue_id))
-        return cur.fetchone()
+        return normalize_row_keys(cur.fetchone())
     finally:
         cur.close()
 
@@ -1520,10 +1532,10 @@ def _render_issue_detail(project_id: str, issue_id: str):
 
 @app.get("/issue")
 def issue_detail_query():
-    project_id = request.args.get("project_id", "").strip()
-    issue_id = request.args.get("issue_id", "").strip()
+    project_id = request.args.get("project_id", "").strip() or request.args.get("PROJECT_ID", "").strip()
+    issue_id = request.args.get("issue_id", "").strip() or request.args.get("ISSUE_ID", "").strip()
     if not project_id or not issue_id:
-        abort(400)
+        abort(404)
     return _render_issue_detail(project_id, issue_id)
 
 
