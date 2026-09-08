@@ -215,6 +215,52 @@ Expected flow:
 4. Files are uploaded to Blob storage.
 5. Summary is logged with uploaded/skipped/failed counts.
 
+## Endringslogg (2026-09-07 til 2026-09-08)
+
+### 2026-09-07
+
+- La til nye filter i hovedlisten: `issue_type` og `location_path`.
+- La til visningsmodi i hovedvinduet: `Bilder`, `Comments` og `History` i split-panel.
+- Forbedret uthenting/visning av comments og history med robust feltoppslag (inkludert case-variasjoner).
+- Byttet detaljvisning til URL-basert faneskifte (`view=attachments|comments|history`) for mer stabil navigasjon.
+- Gjennomfort flere layout-fikser i split-view:
+  - fjernet sticky-overlapp
+  - fikset klikkbarhet i panelomrade
+  - utvidet hovedlayout for mindre horisontal scrolling
+  - fjernet panel-toolbar som ikke ga verdi i praksis
+- La til chat-lignende visning av comments i stedet for ra JSON i:
+  - hovedpanel (`/`)
+  - detaljside (`/issue`)
+
+Relevante commits:
+
+- `73be9e7` Add issue type/location filters and comments/history tabs
+- `48394cb` Show comments/history in split panel on main issue list
+- `74389b4` Fix split panel comments and history rendering
+- `ee66ede` Fix issue detail view buttons
+- `c9d3106` Fix split panel overlap in issue list
+- `6a8e96a` Keep split panel header visible
+- `7c5da6f` Remove sticky overlap in split issue panel
+- `00eb997` Always show split panel toolbar
+- `8209e88` Fix split panel clickability and overlap
+- `7d943c4` Remove split panel toolbar and widen main layout
+- `7d18714` Render issue comments as chat bubbles
+
+### 2026-09-08
+
+- Gjorde issue description klikkbar i hovedlisten og aapner detaljside i ny fane/vindu.
+- Endret detaljnavigasjon til query-basert rute for robusthet:
+  - ny rute: `/issue?project_id=...&issue_id=...`
+  - beholdt path-rute med `path`-parameter som fallback
+- Fikset `Not Found`/`Bad Request` ved comments-visning for saker med spesialtegn i `issue_id`.
+- Normaliserte nøkler i issue-rad (`upper/lower/original`) for aa redusere casing-relaterte datatap i detaljvindu.
+
+Relevante commits:
+
+- `34c4291` Link issue description to detail view
+- `6dd544b` Fix issue detail routing for comments and special IDs
+- `889864d` Fix detail popup data and comments route params
+
 ## Driftssjekkliste (Azure App Service)
 
 Ved ny deploy, bruk denne korte sjekklisten:
